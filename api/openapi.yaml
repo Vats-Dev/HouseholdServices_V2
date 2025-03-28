@@ -1,0 +1,194 @@
+openapi: 3.0.0
+info:
+  title: Household Services API
+  description: API for managing household service requests, professionals, and customers.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+paths:
+  /user/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account for customers or service professionals.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [customer, professional]
+      responses:
+        "201":
+          description: User registered successfully
+        "400":
+          description: Validation error
+
+  /user/login:
+    post:
+      summary: User Login
+      description: Authenticates a user and returns an access token.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+        "403":
+          description: Invalid password
+        "404":
+          description: User not found
+
+  /services:
+    get:
+      summary: Get Available Services
+      description: Returns a list of all household services.
+      tags:
+        - Services
+      responses:
+        "200":
+          description: A list of available services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    price:
+                      type: number
+                    description:
+                      type: string
+                    time_required:
+                      type: integer
+    post:
+      summary: Add a new service
+      description: Allows an admin to create a new service.
+      tags:
+        - Services
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                price:
+                  type: number
+                description:
+                  type: string
+                time_required:
+                  type: integer
+      responses:
+        "201":
+          description: Service created successfully
+        "403":
+          description: Unauthorized
+
+  /service_requests:
+    get:
+      summary: Get service requests
+      description: Fetches all service requests for the logged-in customer or assigned professional.
+      tags:
+        - Service Requests
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: A list of service requests
+    post:
+      summary: Create a Service Request
+      description: Customers can request a service.
+      tags:
+        - Service Requests
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_id:
+                  type: integer
+                  required: true
+                remarks:
+                  type: string
+      responses:
+        "201":
+          description: Service request created successfully
+
+  /service_requests/{request_id}/assign:
+    put:
+      summary: Assign a service request to a professional
+      description: Allows an admin to assign a professional to a pending service request.
+      tags:
+        - Service Requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                professional_id:
+                  type: integer
+      responses:
+        "200":
+          description: Service request assigned successfully
+        "403":
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
